@@ -6,19 +6,77 @@ include_once('header.php');
 // VALUES (NULL, 'Ashish KS', 'ashish@localhost.com', '987654561', 'male', '1995-01-15', '2020-05-09', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 function insert(){
+    global $conn;
     $query = "INSERT INTO `personal_details` (`id`, `name`, `email`, `phone`, `gender`, `date_of_birth`, `date_of_join`, `date_of_leave`, `created_on`, `updated_on`) 
-    VALUES (NULL, '{$_POST['name']}', '{$_POST["email"]}', '{$_POST["phone"]}', '{$_POST["gender"]}', '{$_POST["date_of_birth"]}', '{$_POST["date_of_join"]}', NULL,
-    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"; 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; 
+    // NULL, '{$_POST['name']}', '{$_POST["email"]}', '{$_POST["phone"]}', '{$_POST["gender"]}', '{$_POST["date_of_birth"]}', '{$_POST["date_of_join"]}', NULL,
+    // CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     // echo $query;
     // die;
-    $result = execute_query($query);
-    return $result;
+    
+
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, 'isssssssss', $emp_id, $name, $email, $phone, $gender,
+    $date_of_birth, $date_of_join, $date_of_leave, $created_on, $updated_on);
+    $emp_id = NULL;
+    $name = $_POST['name'];
+    $email = $_POST["email"];
+    $phone = $_POST["phone"];
+    $gender = $_POST["gender"];
+    $date_of_birth = $_POST["date_of_birth"];
+    $date_of_join = $_POST["date_of_join"];
+    $date_of_leave = NULL;
+    $created_on = date('Y-m-d H:i:s', time());
+    $updated_on = date('Y-m-d H:i:s', time());
+    if(mysqli_stmt_execute($stmt)){
+        return 1;
+        mysqli_stmt_close($stmt);
+    }else{
+        return 0;
+    }
+    
+    
 }
 function read($employee_id){
-    $query = "SELECT * FROM `personal_details` WHERE `id` = {$employee_id}";
-    $result = execute_query($query);
-    $row = $result->fetch_assoc();
-    return $row;
+    // echo $employee_id;
+    global $conn;
+    $query = "SELECT * FROM `personal_details` WHERE `id` = ?";
+    // prepatre statement
+    $stmt = mysqli_prepare($conn, $query);
+    // bind parameters to statement
+    mysqli_stmt_bind_param($stmt, "i", $emp_id);
+    $emp_id = $employee_id;
+    // echo $emp_id;
+    // bind result variables to statement result
+    mysqli_stmt_bind_result($stmt,$id, $name, $email, $phone, $gender, $date_of_birth, $date_of_join,
+    $date_of_leave, $created_on, $updated_on);
+    // statement execute
+    mysqli_stmt_execute($stmt);
+    // store result
+    mysqli_stmt_store_result($stmt);
+    // number of rows
+    $num_rows = mysqli_stmt_num_rows($stmt);
+    // fetch statements single row
+    mysqli_stmt_fetch($stmt);
+    
+    if($num_rows > 0){
+        $_POST['name'] = $name;
+        $_POST['email'] = $email;
+        $_POST['phone'] = $phone;
+        $_POST['gender'] = $gender;
+        $_POST['date_of_birth'] = $date_of_birth;
+        $_POST['date_of_join'] = $date_of_join;
+        isset($_POST['date_of_leave']) ? $_POST['date_of_leave'] = $date_of_leave : $_POST['date_of_leave'] = NULL;
+   
+    }else{
+        global $error_message;
+
+        $error_message = "Could not fetch values due to " . mysqli_error($conn);
+    }
+    // free memory aquired by result store
+    mysqli_stmt_free_result($stmt); 
+    // close $stmt statement
+    mysqli_stmt_close($stmt);
 }
 
 function fetch_values($employee_id){
@@ -34,9 +92,7 @@ function fetch_values($employee_id){
         $_POST['date_of_join'] = $row['date_of_join'];
         isset($_POST['date_of_leave']) ? $_POST['date_of_leave'] = $row['date_of_leave'] : $_POST['date_of_leave'] = NULL;
     }else{
-        global $error_message,$conn;
-
-        $error_message = "Could not fetch values due to " . $conn->error;
+        
     }
 
 }
@@ -84,10 +140,15 @@ $success_message = "";
 $error_message = "";
 if($_SERVER['REQUEST_METHOD'] == "POST"){
     if(!isset($_POST['action']) || $_POST['action'] == ""){
+        // insert();
+        // print_r($result);
         if(insert()){
         $success_message = "Record Inserted Successfully!";
-        $conn->close();
+        // $conn->close();
+        
         header("Location: index.php");
+        }else{
+            echo "there is an error. ".mysqli_error($conn);
         }
     }else if(isset($_POST['action']) || $_POST['action'] == "edit"){
         if(update($_POST['employee_id'])){
@@ -100,7 +161,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
         $error_message = "Employee not inserted due to ".$conn->error;
     }
 }else if(isset($_GET['action']) && $_GET['action'] == "edit") {
-    fetch_values($_GET['id']);
+    read($_GET['id']);
 }
 
 ?>

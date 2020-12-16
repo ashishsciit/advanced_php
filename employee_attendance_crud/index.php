@@ -11,6 +11,14 @@ include_once("header.php");
 function read(){
     global $conn;
     $query = "SELECT * FROM `personal_details`";
+    // prepare statement
+    $stmt = mysqli_prepare_stmt($conn, $query);
+    // bind result variables
+    mysqli_stmt_bind_result($stmt, $id, $name, $email);
+    // execute query
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_store_result($stmt);
+    
     $result = $conn->query($query);
     return $result;
 }
