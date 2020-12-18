@@ -28,8 +28,10 @@ function insert(){
     $date_of_leave = NULL;
     $created_on = date('Y-m-d H:i:s', time());
     $updated_on = date('Y-m-d H:i:s', time());
-    if(mysqli_stmt_execute($stmt)){
-        return 1;
+    mysqli_stmt_execute($stmt);
+    $affected_rows = mysqli_stmt_affected_rows($stmt);
+    if($affected_rows > 0){
+        return $affected_rows;
         mysqli_stmt_close($stmt);
     }else{
         return 0;
@@ -57,9 +59,10 @@ function read($employee_id){
     // number of rows
     $num_rows = mysqli_stmt_num_rows($stmt);
     // fetch statements single row
-    mysqli_stmt_fetch($stmt);
+    
     
     if($num_rows > 0){
+        mysqli_stmt_fetch($stmt);
         $_POST['name'] = $name;
         $_POST['email'] = $email;
         $_POST['phone'] = $phone;
@@ -91,43 +94,43 @@ function fetch_values($employee_id){
         $_POST['date_of_birth'] = $row['date_of_birth'];
         $_POST['date_of_join'] = $row['date_of_join'];
         isset($_POST['date_of_leave']) ? $_POST['date_of_leave'] = $row['date_of_leave'] : $_POST['date_of_leave'] = NULL;
-    }else{
-        
     }
 
 }
 
 function update($employee_id){
-    $row = read($employee_id);
+    global $conn;
+    // $row = read($employee_id);
 // UPDATE `personal_details` SET `name` = 'Ashish Kumar S' WHERE `personal_details`.`id` = 1;
-    $query = "UPDATE `personal_details` SET ";
-    if(strcmp($_POST['name'], $row['name'])) {
-        $query .= "`name` = '{$_POST['name']}', ";
-    }
-    if(strcmp($_POST['email'], $row['email'])) {
-        $query .= "`email` = '{$_POST['email']}', ";
-    }
-    if(strcmp($_POST['phone'], $row['phone'])) {
-        $query .= "`phone` = '{$_POST['phone']}', ";
-    }
-    if(strcmp($_POST['gender'], $row['gender'])) {
-        $query .= "`gender` = '{$_POST['gender']}', ";
-    }
-    if(strcmp($_POST['date_of_birth'], $row['date_of_birth'])) {
-        $query .= "`date_of_birth` = '{$_POST['date_of_birth']}', ";
-    }
+    $query = "UPDATE personal_details SET name = ?, email = ?, phone = ?, gender = ?, date_of_birth = ?, date_of_join = ?, date_of_leave = ?, updated_on = ? WHERE id = ?";
     
-    if(strcmp($_POST['date_of_join'], $row['date_of_join'])) {
-        $query .= "`date_of_join` = '{$_POST['date_of_join']}', ";
-    }
-    if(isset($_POST['date_of_leave']) && !strcmp($_POST['date_of_leave'], $row['date_of_leave'])) {
-        $query .= "`date_of_leave` = '{$_POST['date_of_leave']}', ";
-    }
-    $query .= "`updated_on` = CURRENT_TIMESTAMP WHERE id = {$employee_id}";
-    // echo $query;
+   
+    $stmt = mysqli_prepare($conn, $query);
+    if($stmt) {
+    mysqli_stmt_bind_param($stmt,'ssssssssi', $name, $email, $phone, $gender, $date_of_birth, $date_of_join, $date_of_leave, $updated_on, $emp_id);
+    $name = $_POST['name'];
+    $email = $_POST['email'];
+    $phone = $_POST['phone'];
+    $gender = $_POST['gender'];
+    $date_of_birth = $_POST['date_of_birth'];
+    $date_of_join = $_POST['date_of_join'];
+    $date_of_leave = isset($_POST['date_of_leave']) ? $_POST['date_of_leave'] : NULL;
+    $updated_on = date('Y-m-d H:i:s', time());
+    $emp_id = $_POST['employee_id'];
+    mysqli_stmt_execute($stmt);
+    echo mysqli_error($conn);
+    $affected_rows = mysqli_stmt_affected_rows($stmt);
+    // print_r(myqli_stmt_($stmt));
+    // echo $affected_rows;
     // die;
-    return execute_query($query);
-    
+    if($affected_rows > 0) {
+        return $affected_rows;
+    }else{
+        return 0;
+    }
+}
+    mysqli_stmt_close($stmt);
+
 
 }
 
@@ -142,18 +145,19 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
     if(!isset($_POST['action']) || $_POST['action'] == ""){
         // insert();
         // print_r($result);
-        if(insert()){
-        $success_message = "Record Inserted Successfully!";
-        // $conn->close();
-        
+        $affected_rows = insert();
+        if($affected_rows > 0){
+        $success_message = $affected_rows . "Employee Record Inserted Successfully!";
+        // $conn->close();   
         header("Location: index.php");
         }else{
             echo "there is an error. ".mysqli_error($conn);
         }
     }else if(isset($_POST['action']) || $_POST['action'] == "edit"){
-        if(update($_POST['employee_id'])){
-            $success_message = "Record updated successfully!";
-            $conn->close();
+        $affected_rows = update($_POST['employee_id']);
+        if($affected_rows){
+            $success_message = $affected_rows . "Employee Record updated successfully!";
+            
             header("Location: index.php");
         }
     }

@@ -10,24 +10,51 @@ include_once("header.php");
 // UPDATE `personal_details` SET `name` = 'Ashish Kumar S' WHERE `personal_details`.`id` = 1;
 function read(){
     global $conn;
-    $query = "SELECT * FROM `personal_details`";
+    $query = "SELECT id, name, phone, email FROM `personal_details`";
     // prepare statement
-    $stmt = mysqli_prepare_stmt($conn, $query);
+    $stmt = $conn->prepare($query);
     // bind result variables
-    mysqli_stmt_bind_result($stmt, $id, $name, $email);
-    // execute query
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_store_result($stmt);
+    $stmt->bind_result($id, $name, $phone, $email);
+    $stmt->execute();
+    $row = array();
+    $i = 0;
+    while($stmt->fetch()){
+      
+      $row[$i]['id'] = $id;
+      $row[$i]['name'] = $name;
+      $row[$i]['email'] = $email;
+      $row[$i]['phone'] = $phone;
+      $i++;
+    }
+    // exit;
+    // print_r($row);
+    // die;
     
-    $result = $conn->query($query);
-    return $result;
+    return $row;
+    
+    // execute query
+    
+    // $stmt->store_result();
+    // $result = $stmt->fetch();
+    // $stmt->fetch();
+    // echo $name;
+    // die;
+
+    
+    
 }
+
+
+
 function delete($employeed_id){
   global $conn;
-  $query = "DELETE FROM `personal_details` WHERE id = {$employeed_id}";
-  $result = $conn->query($query);
-  if($result){
-    $success_message = "Record Deleted Successfully!";
+  $query = "DELETE FROM `personal_details` WHERE id = ?";
+  $stmt = mysqli_prepare($conn, $query);
+  mysqli_stmt_bind_param($stmt, 'i', $employeed_id);
+  mysqli_stmt_execute($stmt);
+  $affected_rows = mysqli_stmt_affected_rows($stmt);
+  if($affected_rows > 0){
+    $success_message = $affected_rows . " Record Deleted Successfully!";
     header("Location: index.php");
   }else{
     $error_message = "Record not deleted due to ".$conn->error;
@@ -65,19 +92,23 @@ $conn->close();
   </thead>
   <tbody>
     <?php
-    if($result->num_rows > 0){
+    // $result->store_result();
+    
+    if(count($result) > 0){
         $i=1;
-        while($row = $result->fetch_assoc()) {
+        
+        
+        foreach($result  as $val) {
     ?>
     <tr>
       <th scope="row"><?=$i?></th>
-      <td><?=$row['name']?></td>
-      <td><?=$row['email']?></td>
-      <td><?=$row['phone']?></td>
+      <td><?=$val['name']?></td>
+      <td><?=$val['email']?></td>
+      <td><?=$val['phone']?></td>
       
       <td>
-      <a href="employees.php?action=edit&id=<?=$row['id']?>"><span class="oi oi-pencil btn btn-warning"></span></a>
-      <a href="index.php?action=delete&id=<?=$row['id']?>"><span class="oi oi-trash btn btn-danger rounded" id="<?=$row['id']?>"></span></a>
+      <a href="employees.php?action=edit&id=<?=$val['id']?>"><span class="oi oi-pencil btn btn-warning"></span></a>
+      <a href="index.php?action=delete&id=<?=$val['id']?>"><span class="oi oi-trash btn btn-danger rounded" id="<?=$row['id']?>"></span></a>
       </td>
     </tr>
     <?php
