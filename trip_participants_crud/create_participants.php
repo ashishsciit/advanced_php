@@ -1,132 +1,142 @@
 <?php
     require_once("database.php");
- 
-    function insert(){
-        $query = "INSERT INTO `participants`(`id`, `name`, `email`, `phone`, `gender`, `age`,
-        `suggestion`,`created_on`) VALUES(NULL, '".$_POST['name']."','".$_POST['email']."','"
-        .$_POST['phone']."  ','".$_POST['gender']."','".$_POST['age']."','".$_POST['suggestion']."'
-        ,CURRENT_TIMESTAMP)";
-        return $query;
-    }
-    function read($participant_id, $conn){
-        $row = array();
-        $query = "SELECT * FROM `participants` WHERE id=" . $participant_id;
-        $result = mysqli_query($conn, $query);
-        if(mysqli_num_rows($result) == 1)
-        {
-            $row = mysqli_fetch_assoc($result);
-        }
-        
-        return $row;
 
-    }
-    function fetch_values($row){
-        $_POST['name'] = $row['name'];
-        $_POST['email'] = $row['email'];
-        $_POST['phone'] = $row['phone'];
-        $_POST['gender'] = $row['gender'];
-        $_POST['age'] = $row['age'];
-        $_POST['suggestion'] = $row['suggestion'];
-    }
-    function update($participant_id, $row){
-        $query = "UPDATE `participants` SET ";
-        // print_r($row);
-        echo strcmp($row['name'], $_POST['name']);
-            if(strcmp($row['name'], $_POST['name']) != 0){
-                $query .= "`name` = '".$_POST['name']."',";
+    class ParticipantsAction extends Database{
+
+        public function __construct(){
+            parent::__construct();
+            if($_SERVER['REQUEST_METHOD'] == "POST"){
+                if(!empty($_POST['name']) && !empty($_POST['email']) &&
+                !empty($_POST['phone']) && !empty($_POST['gender']) 
+                && !empty($_POST['age']) &&!empty($_POST['suggestion'])){
+                $this->action($_POST['action']);
+                }else{
+                    $error_message = "All fields required";
+                }
+            }else if(isset($_GET['action'])){
+                if($_GET['action'] == "edit"){
+                $row = $this->read($_GET['id']);
+                $this->fetch_values($row);
+                }else if($_GET['action'] == "delete"){
+                    $this->action($_GET['action']);
+                }
             }
-            if(strcmp($row['email'], $_POST['email']) != 0){
-                $query .= "`email` = '".$_POST['email']."',";
+        
+            // echo $this->test;
+        }
+
+        function action($action){
+            if($action == "create"){
+                $query = $this->insert();
+                
+            }else if($action == "edit"){
+                
+                $row = $this->read($_POST['participant_id']);
+                $query = $this->update($_POST['participant_id'],$row);
+            
+            }else if($action == "delete") {
+                $query = $this->delete($_GET['id']);
             }
-            if(strcmp($row['phone'], $_POST['phone']) != 0){
-                $query .= "`phone` = '".$_POST['phone']."',";
+            if($this->execute_query($query)){
+                header("Location: index.php");
             }
-            if(strcmp($row['gender'], $_POST['gender']) != 0){
-                $query .= "`gender` = '".$_POST['gender']."',";
-            }
-            if(strcmp($row['age'], $_POST['age']) != 0){
-                $query .= "`age` = '".$_POST['age']."',";
-            }
-            if(strcmp($row['suggestion'], $_POST['suggestion']) != 0){
-                $query .= "`suggestion` = '".$_POST['suggestion']."'";
-            }
-            $query .= " WHERE id = " . $participant_id;
-            // execute_query($conn, $query);
-            // $update_query = 1;
+            
+        }
+
+        function insert(){
+            $query = "INSERT INTO `participants`(`id`, `name`, `email`, `phone`, `gender`, `age`,
+            `suggestion`,`created_on`) VALUES(NULL, '".$_POST['name']."','".$_POST['email']."','"
+            .$_POST['phone']."  ','".$_POST['gender']."','".$_POST['age']."','".$_POST['suggestion']."'
+            ,CURRENT_TIMESTAMP)";
             return $query;
-    }
+        }
 
-    function delete($participant_id) {
-        $query = "DELETE FROM `participants` WHERE `id` = " . $participant_id;
-        return $query;
-    }
-    
-    function execute_query($conn,$query){
-        
-        $error_message = "";
-        if(mysqli_query($conn, $query)){
-            $success_message = "Participant ";
-            if(isset($update_query)){
-                $success_message .= "Modified";
-            }else{
-                $success_message .= "Created";
+        function update($participant_id, $row){
+            $query = "UPDATE `participants` SET `id` = $participant_id";
+            echo strcmp($row['name'], $_POST['name']);
+                if(strcmp($row['name'], $_POST['name']) != 0){
+                    $query .= ",`name` = '".$_POST['name']."'";
+                }
+                if(strcmp($row['email'], $_POST['email']) != 0){
+                    $query .= ",`email` = '".$_POST['email']."'";
+                }
+                if(strcmp($row['phone'], $_POST['phone']) != 0){
+                    $query .= ",`phone` = '".$_POST['phone']."'";
+                }
+                if(strcmp($row['gender'], $_POST['gender']) != 0){
+                    $query .= ",`gender` = '".$_POST['gender']."'";
+                }
+                if(strcmp($row['age'], $_POST['age']) != 0){
+                    $query .= ",`age` = '".$_POST['age']."'";
+                }
+                if(strcmp($row['suggestion'], $_POST['suggestion']) != 0){
+                    $query .= ",`suggestion` = '".$_POST['suggestion']."'";
+                }
+                $query .= " WHERE id = " . $participant_id;
+                
+                return $query;
+        }
+
+        function read($participant_id){
+            $row = array();
+            $query = "SELECT * FROM `participants` WHERE id=" . $participant_id;
+            $result = mysqli_query($this->conn, $query);
+            if(mysqli_num_rows($result) == 1)
+            {
+                $row = mysqli_fetch_assoc($result);
             }
-            $success_message .= " Successfully!";
-            $_POST = array();
-            // header("index.php");
-            // print_r(mysqli_info($conn));
-        }else{ 
-            $error_message = "Something went wrong. Please try again! due to ".mysqli_error($conn);
-        }  
-        if($error_message == ""){
-            return 1;
             
-        }else{
-            return 0;
+            return $row;
+    
         }
-    }
+        function fetch_values($row){
+            $_POST['name'] = $row['name'];
+            $_POST['email'] = $row['email'];
+            $_POST['phone'] = $row['phone'];
+            $_POST['gender'] = $row['gender'];
+            $_POST['age'] = $row['age'];
+            $_POST['suggestion'] = $row['suggestion'];
+        }
+        function delete($participant_id) {
+            $query = "DELETE FROM `participants` WHERE `id` = " . $participant_id;
+            return $query;
+        }
 
-    function action($action, $conn){
+        function execute_query($query){
         
-        if($action == "create"){
-            $query = insert();
-            
-        }else if($action == "edit"){
-            // echo $_POST['participant_id'];
-            // die;
-            $row = read($_POST['participant_id'],$conn);
-            
-            $query = update($_POST['participant_id'],$row);
-            
+            $error_message = "";
+            if(mysqli_query($this->conn, $query)){
+                $success_message = "Participant ";
+                if(isset($update_query)){
+                    $success_message .= "Modified";
+                }else{
+                    $success_message .= "Created";
+                }
+                $success_message .= " Successfully!";
+                $_POST = array();
+            }else{ 
+                $error_message = "Something went wrong. Please try again! due to ".mysqli_error($this->conn);
+            }  
+            if($error_message == ""){
+                return 1;
+                
+            }else{
+                return 0;
+            }
+        }
+    
 
-        }else if($action == "delete") {
-            $query = delete($_GET['id']);
-        }
-        // echo $query;
-        // die;
-        if(execute_query($conn, $query)){
-            header("Location: index.php");
-        }
-        
     }
 
-    if($_SERVER['REQUEST_METHOD'] == "POST"){
-        if(!empty($_POST['name']) && !empty($_POST['email']) &&
-        !empty($_POST['phone']) && !empty($_POST['gender']) 
-        && !empty($_POST['age']) &&!empty($_POST['suggestion'])){
-        action($_POST['action'], $conn);
-        }else{
-            $error_message = "All fields required";
-        }
-        // 
-    }else if(isset($_GET['action'])){
-        if($_GET['action'] == "edit"){
-        $row = read($_GET['id'], $conn);
-        fetch_values($row);
-        }else if($_GET['action'] == "delete"){
-            action($_GET['action'], $conn);
-        }
-    }
+    $participantsAction = new ParticipantsAction();
+ 
+    
+    
+    
+    
+    
+    
+
 
 ?>
 
