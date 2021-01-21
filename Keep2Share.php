@@ -50,13 +50,10 @@ class Keep2Share {
     // Get logged in user profile response
     public function loggedInUserResponse(){
         if($this->loggedIn) {
-
             curl_setopt($this->ch, CURLOPT_URL, "https://api.k2s.cc/v1/users/me");
             curl_setopt($this->ch, CURLOPT_POST, 0);
-
             curl_setopt($this->ch, CURLOPT_COOKIEJAR, "cookie.txt");
             curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, 1);
-
             curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, 1);
             $userResponse = curl_exec($this->ch);
             if($userResponse){
