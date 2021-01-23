@@ -23,11 +23,8 @@ function selection_sort($elements){
             }
         }
         $elements = swap_position($elements, $i, $min);
-        
-
     }
     return $elements;
-
 }
 
 function swap_position($elements, $left, $right){
@@ -116,7 +113,7 @@ function quick_sort($elements) {
 $elements = [9,8,7,6,5,4,3];
 print_r($elements);
 echo "<br/>";
-print_r(quick_sort($elements));
+print_r(selection_sort($elements));
 
 
 ?>
