@@ -7,8 +7,12 @@ class Cricketer extends REST_Controller {
         parent::__construct();
     }
 
+    public function player_image($id){
+        echo APPPATH."images/$id.png";
+    }
+
     public function index_get($id = 0) {
-        $query = "SELECT p.id, p.name, p.age, t.name team, s.roll, s.matches, s.runs, s.run_rate, s.strike_rate, s.fours, s.sixes,
+        $query = "SELECT p.id, p.name, p.age, p.jersey_no, t.name team, s.roll, s.matches, s.runs, s.run_rate, s.strike_rate, s.fours, s.sixes,
         s.fifties, s.hundreds, s.wickets, s.wickets_strike_rate, s.economy_rate, s.maidens, s.five_wickets, s.catches FROM 
         ((`player` p INNER JOIN `team` t
         ON p.team_id=t.id)
@@ -28,13 +32,17 @@ class Cricketer extends REST_Controller {
     public function index_post(){
         // INSERT INTO `player` (`id`, `name`, `age`, `team_id`, `stats_id`, `created_at`, `updated_at`, `updated_by`) VALUES ('1', 'Virat Kohli', '29', '1', '1', current_timestamp(), current_timestamp(), '1'), ('2', 'pat cummins', '31', '2', '2', current_timestamp(), current_timestamp(), '1');
         // $query = "INSERT INTO team(name) VALUES ('india');";
+        // $post = json_decode($this->security->xss_clean($this->input->raw_input_stream));
+        // echo $this->post('name');
+        // print_r($post->name);
+        // $this->response($post,REST_Controller::HTTP_OK);
+        // die;
+        $player_name = $this->post('name');
+        $player_age = $this->post('age');
+        $player_jersey_no = $this->post('jersey_no');
         
-        $player_name = $this->input->post('name');
-        $player_age = $this->input->post('age');
-        $player_jersey_no = $this->input->post('jersey_no');
         
-        
-        $team = $this->input->post('team');
+        $team = $this->post('team');
         $team_result = $this->db->get_where('team',array('name' => $team));
         $team_exists = $team_result->num_rows() > 0 ? true : false;
         if(!$team_exists){
@@ -46,21 +54,21 @@ class Cricketer extends REST_Controller {
 
         $player_result = $this->db->get_where('player',array('jersey_no'=>$player_jersey_no, 'team_id'=> $team_id));
         if($player_result->num_rows() == 0){
-            $roll = $this->input->post('roll') ?? '';
-            $matches = $this->input->post('matches') ?? '';
-            $runs = $this->input->post('runs') ?? '';
-            $run_rate = $this->input->post('run_rate') ?? '';
-            $strike_rate = $this->input->post('strike_rate') ?? '';
-            $fours = $this->input->post('fours') ?? '';
-            $sixes = $this->input->post('sixes') ?? '';
-            $fifties = $this->input->post('fifties') ?? '';
-            $hundreds = $this->input->post('hundreds') ?? '';
-            $wickets = $this->input->post('wickets') ?? '';
-            $wickets_strike_rate = $this->input->post('wickets_strike_rate') ?? '';
-            $economy_rate = $this->input->post('economy_rate') ?? '';
-            $maidens = $this->input->post('maidens') ?? '';
-            $five_wickets = $this->input->post('five_wickets') ?? '';
-            $catches = $this->input->post('catches') ?? '';
+            $roll = $this->post('roll') ?? '';
+            $matches = $this->post('matches') ?? '';
+            $runs = $this->post('runs') ?? '';
+            $run_rate = $this->post('run_rate') ?? '';
+            $strike_rate = $this->post('strike_rate') ?? '';
+            $fours = $this->post('fours') ?? '';
+            $sixes = $this->post('sixes') ?? '';
+            $fifties = $this->post('fifties') ?? '';
+            $hundreds = $this->post('hundreds') ?? '';
+            $wickets = $this->post('wickets') ?? '';
+            $wickets_strike_rate = $this->post('wickets_strike_rate') ?? '';
+            $economy_rate = $this->post('economy_rate') ?? '';
+            $maidens = $this->post('maidens') ?? '';
+            $five_wickets = $this->post('five_wickets') ?? '';
+            $catches = $this->post('catches') ?? '';
 
 
             $stats_query = "INSERT INTO statistics(roll, matches, runs, run_rate, 
@@ -178,6 +186,13 @@ class Cricketer extends REST_Controller {
     }
 
     public function index_delete($id){
+        $this->db->update('player',array('deleted'=>1), array('id' => $id));
+        // $this->db->delete('player',array('id'=>$id));
+
+        $this->response(['Player deleted successfully'], REST_Controller::HTTP_OK);
+    }
+
+    public function delete_player($id) {
         $this->db->update('player',array('deleted'=>1), array('id' => $id));
         // $this->db->delete('player',array('id'=>$id));
 
